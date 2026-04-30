@@ -1,5 +1,5 @@
 """
-report.py — Auto-generate a beautiful HTML monthly finance report
+report.py — Auto-generate a HTML monthly finance report
 """
 
 import os
