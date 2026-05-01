@@ -1,6 +1,7 @@
 # finance-tracker requirements
 # Core dependencies only — stdlib is used where possible
-
+flask
+gunicorn
 # CSV parsing, data analysis
 pandas>=2.0.0
 
