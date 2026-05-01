@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceIQ — Personal Spending Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --surface: #0f0f1a;
+    --surface2: #161625;
+    --border: #1e1e32;
+    --text: #e8e8f4;
+    --muted: #6666aa;
+    --accent: #7c6af7;
+    --accent2: #f7c26a;
+    --green: #4ade80;
+    --red: #f87171;
+    --radius: 16px;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+  #upload-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+  .hero-glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124,106,247,0.12) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+  .logo { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 3rem; animation: fadeUp 0.6s ease forwards; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; text-align: center; line-height: 1.1; margin-bottom: 1.25rem; animation: fadeUp 0.6s ease 0.1s forwards; opacity: 0; }
+  .hero-title span { background: linear-gradient(135deg, #7c6af7, #f7c26a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { font-size: 1.1rem; color: var(--muted); text-align: center; max-width: 480px; line-height: 1.6; margin-bottom: 3rem; animation: fadeUp 0.6s ease 0.2s forwards; opacity: 0; }
+  .upload-card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 2.5rem; width: 100%; max-width: 520px; animation: fadeUp 0.6s ease 0.3s forwards; opacity: 0; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative; }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(124,106,247,0.05); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+  .upload-zone h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .upload-zone p { font-size: 0.85rem; color: var(--muted); }
+  .file-selected { color: var(--accent); font-weight: 500; margin-top: 0.75rem; font-size: 0.9rem; }
+  .options { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .option-row { display: flex; align-items: center; gap: 0.75rem; }
+  .option-row label { font-size: 0.85rem; color: var(--muted); flex: 1; }
+  .option-row input[type="text"] { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.85rem; width: 180px; outline: none; }
+  .toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+  .toggle input { display: none; }
+  .toggle-track { width: 36px; height: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; position: relative; transition: background 0.2s; }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb { position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; }
+  .toggle input:checked ~ .toggle-track .toggle-thumb { left: 18px; }
+  .submit-btn { margin-top: 1.5rem; width: 100%; padding: 1rem; background: linear-gradient(135deg, #7c6af7, #9d8ff9); border: none; border-radius: var(--radius); color: white; font-family: var(--font-display); font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,106,247,0.4); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .banks { margin-top: 2rem; text-align: center; font-size: 0.78rem; color: var(--muted); animation: fadeUp 0.6s ease 0.4s forwards; opacity: 0; }
+  #loading-page { display: none; min-height: 100vh; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; }
+  .spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .loading-text { font-family: var(--font-display); font-size: 1.1rem; color: var(--muted); }
+  #dashboard-page { display: none; }
+  .dash-header { background: #0d0d1f; border-bottom: 1px solid var(--border); padding: 1.75rem 2.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+  .dash-header h1 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
+  .dash-header h1 span { color: var(--accent2); }
+  .new-upload-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer; }
+  .new-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .dash-main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; animation: fadeUp 0.5s ease forwards; opacity: 0; }
+  .kpi-card:nth-child(1){animation-delay:0.1s} .kpi-card:nth-child(2){animation-delay:0.2s} .kpi-card:nth-child(3){animation-delay:0.3s} .kpi-card:nth-child(4){animation-delay:0.4s}
+  .kpi-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  .kpi-value { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; }
+  .kpi-value.income{color:var(--green)} .kpi-value.expense{color:var(--red)} .kpi-value.net-pos{color:var(--green)} .kpi-value.net-neg{color:var(--red)}
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; animation: fadeUp 0.5s ease forwards; opacity: 0; }
+  .card-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; margin-bottom: 1.25rem; }
+  .card canvas { max-height: 240px; }
+  .wide { grid-column: 1 / -1; }
+  .anomaly-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.875rem; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid; }
+  .anomaly-item.high { background: rgba(248,113,113,0.06); border-color: rgba(248,113,113,0.25); }
+  .anomaly-item.medium { background: rgba(247,194,106,0.06); border-color: rgba(247,194,106,0.25); }
+  .anomaly-body { display: flex; flex-direction: column; gap: 0.2rem; }
+  .anomaly-body strong { font-size: 0.9rem; font-family: var(--font-display); }
+  .anomaly-body span { font-size: 0.82rem; color: var(--accent2); }
+  .anomaly-body small { font-size: 0.75rem; color: var(--muted); }
+  .merchant-row { display: flex; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; gap: 0.5rem; }
+  .merchant-row:last-child { border-bottom: none; }
+  .merchant-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .merchant-visits { color: var(--muted); min-width: 2rem; text-align: center; font-size: 0.78rem; }
+  .merchant-total { font-weight: 600; font-family: var(--font-display); min-width: 5rem; text-align: right; }
+  .no-data { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+  .error-msg { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 1rem; color: var(--red); font-size: 0.88rem; margin-top: 1rem; display: none; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+
+<div id="upload-page">
+  <div class="hero-glow"></div>
+  <div class="logo">FinanceIQ</div>
+  <h1 class="hero-title">Understand your<br><span>spending instantly</span></h1>
+  <p class="hero-sub">Upload your bank CSV and get a beautiful, private analysis of your finances — no account needed, no data stored.</p>
+  <div class="upload-card">
+    <div class="upload-zone" id="drop-zone">
+      <input type="file" id="csv-file" accept=".csv">
+      <span class="upload-icon">📂</span>
+      <h3>Drop your CSV here</h3>
+      <p>or click to browse — Scotiabank, TD, RBC and more</p>
+      <div class="file-selected" id="file-name"></div>
+    </div>
+    <div class="options">
+      <div class="option-row">
+        <label>Account name</label>
+        <input type="text" id="account-name" placeholder="e.g. Scotia Visa" value="My Account">
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="flip-amounts">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        Credit card CSV (flip amounts)
+      </label>
+    </div>
+    <button class="submit-btn" id="analyze-btn" disabled>Analyze my spending →</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+  <div class="banks">Works with Scotiabank · TD · RBC · BMO · CIBC · Tangerine</div>
+</div>
+
+<div id="loading-page">
+  <div class="spinner"></div>
+  <div class="loading-text">Analyzing your transactions...</div>
+</div>
+
+<div id="dashboard-page">
+  <div class="dash-header">
+    <h1>💰 Finance Report — <span id="dash-month"></span></h1>
+    <button class="new-upload-btn" onclick="resetToUpload()">← Upload new file</button>
+  </div>
+  <div class="dash-main">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Total Income</div><div class="kpi-value income" id="kpi-income">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Expenses</div><div class="kpi-value expense" id="kpi-expenses">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Net Savings</div><div class="kpi-value" id="kpi-net">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Transactions</div><div class="kpi-value" id="kpi-tx">—</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="card" style="animation-delay:0.2s"><div class="card-title">🍩 Spending by Category</div><canvas id="donutChart"></canvas></div>
+      <div class="card" style="animation-delay:0.3s"><div class="card-title">📅 Daily Spending</div><canvas id="dailyChart"></canvas></div>
+    </div>
+    <div class="card wide" style="margin-bottom:1.25rem;animation-delay:0.4s">
+      <div class="card-title">📈 Monthly Trend</div>
+      <canvas id="trendChart" style="max-height:200px"></canvas>
+    </div>
+    <div class="charts-grid">
+      <div class="card" style="animation-delay:0.5s"><div class="card-title">🚨 Spending Anomalies</div><div id="anomalies-list"></div></div>
+      <div class="card" style="animation-delay:0.6s"><div class="card-title">🏪 Top Merchants</div><div id="merchants-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#7c6af7','#f7c26a','#4ade80','#f87171','#38bdf8','#fb923c','#a78bfa','#34d399'];
+const GRID = 'rgba(255,255,255,0.05)';
+const MUTED = '#6666aa';
+let donutChart, dailyChart, trendChart;
+
+const fileInput = document.getElementById('csv-file');
+const dropZone = document.getElementById('drop-zone');
+const analyzeBtn = document.getElementById('analyze-btn');
+const fileNameEl = document.getElementById('file-name');
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) { fileNameEl.textContent = '✓ ' + fileInput.files[0].name; analyzeBtn.disabled = false; }
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) { fileInput.files = e.dataTransfer.files; fileNameEl.textContent = '✓ ' + file.name; analyzeBtn.disabled = false; }
+});
+
+analyzeBtn.addEventListener('click', uploadAndAnalyze);
+
+async function uploadAndAnalyze() {
+  const file = fileInput.files[0];
+  if (!file) return;
+  showPage('loading');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('account', document.getElementById('account-name').value || 'My Account');
+  formData.append('flip_amounts', document.getElementById('flip-amounts').checked ? 'true' : 'false');
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.error) { showPage('upload'); showError(data.error); return; }
+    renderDashboard(data);
+    showPage('dashboard');
+  } catch(err) { showPage('upload'); showError('Something went wrong. Please try again.'); }
+}
+
+function renderDashboard(data) {
+  const [year, month] = data.month.split('-');
+  document.getElementById('dash-month').textContent = new Date(year, month-1).toLocaleString('default', {month:'long', year:'numeric'});
+  const s = data.stats;
+  document.getElementById('kpi-income').textContent = '$' + (s.income||0).toFixed(2);
+  document.getElementById('kpi-expenses').textContent = '$' + (s.expenses||0).toFixed(2);
+  const netEl = document.getElementById('kpi-net');
+  const net = s.net || 0;
+  netEl.textContent = (net >= 0 ? '+$' : '-$') + Math.abs(net).toFixed(2);
+  netEl.className = 'kpi-value ' + (net >= 0 ? 'net-pos' : 'net-neg');
+  document.getElementById('kpi-tx').textContent = s.tx_count || 0;
+
+  [donutChart, dailyChart, trendChart].forEach(c => c && c.destroy());
+
+  const cats = data.categories;
+  donutChart = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: { labels: cats.map(c=>c.category), datasets: [{ data: cats.map(c=>c.total), backgroundColor: COLORS, borderWidth: 2, borderColor: '#0f0f1a' }] },
+    options: { cutout: '62%', plugins: { legend: { position: 'right', labels: { color: MUTED, boxWidth: 10, padding: 10, font: { size: 11 } } } } }
+  });
+
+  const daily = data.daily;
+  dailyChart = new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: { labels: daily.map(d=>d.date.slice(5)), datasets: [{ data: daily.map(d=>d.spent), backgroundColor: 'rgba(124,106,247,0.7)', borderRadius: 4 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: MUTED, maxTicksLimit: 8 }, grid: { color: GRID } }, y: { ticks: { color: MUTED, callback: v=>'$'+v }, grid: { color: GRID } } } }
+  });
+
+  const monthly = data.monthly;
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: monthly.map(m=>m.month), datasets: [
+      { label: 'Income', data: monthly.map(m=>m.income), borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+      { label: 'Expenses', data: monthly.map(m=>m.expenses), borderColor: '#f87171', backgroundColor: 'rgba(248,113,113,0.08)', tension: 0.4, fill: true, pointRadius: 3 }
+    ]},
+    options: { plugins: { legend: { labels: { color: MUTED } } }, scales: { x: { ticks: { color: MUTED }, grid: { color: GRID } }, y: { ticks: { color: MUTED, callback: v=>'$'+v }, grid: { color: GRID } } } }
+  });
+
+  const anomalyList = document.getElementById('anomalies-list');
+  anomalyList.innerHTML = data.anomalies.length === 0
+    ? '<p class="no-data">✅ No spending anomalies detected.</p>'
+    : data.anomalies.map(a => `<div class="anomaly-item ${a.pct_change>=50?'high':'medium'}"><div>${a.pct_change>=50?'🔴':'🟡'}</div><div class="anomaly-body"><strong>${a.category}</strong><span>+${a.pct_change}% vs prior avg</span><small>$${a.current.toFixed(2)} vs avg $${a.avg_prior.toFixed(2)}</small></div></div>`).join('');
+
+  document.getElementById('merchants-list').innerHTML = data.merchants.length === 0
+    ? '<p class="no-data">No merchant data.</p>'
+    : data.merchants.map(m => `<div class="merchant-row"><span class="merchant-name">${m.description}</span><span class="merchant-visits">${m.visits}×</span><span class="merchant-total">$${m.total.toFixed(2)}</span></div>`).join('');
+}
+
+function showPage(page) {
+  document.getElementById('upload-page').style.display = page==='upload' ? 'flex' : 'none';
+  document.getElementById('loading-page').style.display = page==='loading' ? 'flex' : 'none';
+  document.getElementById('dashboard-page').style.display = page==='dashboard' ? 'block' : 'none';
+}
+
+function resetToUpload() {
+  fileInput.value = ''; fileNameEl.textContent = ''; analyzeBtn.disabled = true;
+  document.getElementById('error-msg').style.display = 'none';
+  showPage('upload');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>
