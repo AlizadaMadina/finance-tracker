@@ -2,7 +2,7 @@
 
 > Import your bank transactions, detect spending anomalies, and get a beautiful monthly HTML report — all from the command line.
 
-[![CI](https://github.com/YOUR_USERNAME/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/finance-tracker/actions)
+[![CI](https://github.com/AlizadaMadina/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/finance-tracker/actions)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
