@@ -1,8 +1,8 @@
-# 💰 Personal Finance Tracker & Spending Analyzer
+# 💰 FinanceIQ — Personal Finance Tracker & Spending Analyzer
 
-> Import your bank transactions, detect spending anomalies, and get a beautiful monthly HTML report — all from the command line.
+> Upload your bank transactions, detect spending anomalies, and get a beautiful dashboard — all in your browser or from the command line.
 
-[![CI](https://github.com/AlizadaMadina/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/finance-tracker/actions)
+[![CI](https://github.com/AlizadaMadina/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/AlizadaMadina/finance-tracker/actions)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -16,12 +16,26 @@ This is not just another expense logger. The core value is the **insights engine
 - 🗂 **Auto-Categorization** — 15+ keyword rules (Groceries, Transport, Subscriptions, etc.)
 - 🚨 **Anomaly Detection** — Flags categories where you spent significantly more than your rolling average
 - 🎯 **Budget Tracking** — Set monthly limits per category, track progress
-- 📊 **HTML Reports** — Auto-generated monthly reports with interactive charts (donut, trend, daily)
+- 📊 **Beautiful Web Dashboard** — Upload your CSV and see interactive charts instantly
+- 📈 **HTML Reports** — Auto-generated monthly reports with charts
 - 🔍 **SQL-Powered Analytics** — All data lives in a local SQLite file you fully own
 
 ---
 
-## Quick Start
+## Running the Web App
+
+```bash
+python app.py
+```
+
+Then open your browser and go to:
+http://localhost:8000
+
+Upload your bank CSV file, click **Analyze my spending** and see your full dashboard instantly — no code needed!
+
+---
+
+## Quick Start (CLI)
 
 ```bash
 # 1. Clone and install
@@ -37,7 +51,6 @@ python cli.py summary
 
 # 4. Generate a report
 python cli.py report
-#    → Opens: reports/report_2024-12.html
 ```
 
 ---
@@ -54,18 +67,18 @@ python cli.py import ~/Downloads/transactions.csv --account "TD Chequing"
 python cli.py import ~/Downloads/export.csv --date-col 0 --desc-col 2 --amount-col 4
 ```
 
-**Supported formats include:**
-- TD Bank, RBC, BMO, Scotiabank, CIBC, Tangerine
+**Supported banks:**
+- Scotiabank, TD, RBC, BMO, CIBC, Tangerine
 - Chase, Bank of America, Wells Fargo
 - Any CSV with date / description / amount columns
 
 ---
 
-## Commands
+## CLI Commands
 
 | Command | Description |
 |---|---|
-| `python cli.py demo` | Load ~300 sample transactions |
+| `python cli.py demo` | Load sample transactions |
 | `python cli.py import <file.csv>` | Import transactions from CSV |
 | `python cli.py summary` | Month-by-month income/expense table |
 | `python cli.py categories --month 2024-03` | Spending breakdown by category |
@@ -77,69 +90,22 @@ python cli.py import ~/Downloads/export.csv --date-col 0 --desc-col 2 --amount-c
 
 ---
 
-## Example: Anomaly Detection
-
-```
-🚨 Anomaly Detection — 2024-03
-──────────────────────────────────────────────────
-🔴 Food & Dining          +72.3%
-     Current: $428.50  |  Avg: $248.90  |  Delta: +$179.60
-🟡 Shopping               +38.1%
-     Current: $312.00  |  Avg: $226.00  |  Delta: +$86.00
-```
-
-Anomalies are detected by comparing the current month against the rolling N-month average (default: 3 months). Any category up 25%+ is flagged.
-
----
-
-## Example: Monthly Summary
-
-```
-══════════════════════════════════════════════════════
-  MONTH       INCOME      EXPENSES         NET    TXS
-  ──────────  ──────────  ──────────  ──────────  ─────
-  2024-01    $5,500.00   $3,821.30   +$1,678.70     48
-  2024-02    $5,500.00   $4,102.80   +$1,397.20     52
-  2024-03    $5,500.00   $4,480.50   +$1,019.50     61
-```
-
----
-
 ## Project Structure
 
-```
 finance-tracker/
-├── cli.py            # Main CLI entry point
-├── database.py       # SQLite schema & connection
-├── importer.py       # CSV parser + auto-categorizer
+├── app.py            # Flask web server
+├── cli.py            # CLI entry point
+├── database.py       # SQLite schema and connection
+├── importer.py       # CSV parser and auto-categorizer
 ├── analytics.py      # SQL queries, anomaly detection, budgets
 ├── report.py         # HTML report generator
+├── templates/
+│   └── index.html    # Web app frontend
 ├── requirements.txt
 ├── tests/
-│   └── test_core.py  # Pytest test suite (9 tests)
+│   └── test_core.py  # Pytest test suite
 ├── data/             # SQLite DB lives here (gitignored)
 └── reports/          # Generated HTML reports (gitignored)
-```
-
----
-
-## Customizing Categories
-
-Category rules are stored in the `category_rules` table. You can add custom rules:
-
-```python
-from database import get_connection
-conn = get_connection()
-conn.execute("INSERT INTO category_rules (keyword, category) VALUES (?, ?)", 
-             ("whole foods|t&t|choices", "Groceries"))
-conn.commit()
-```
-
-Or re-categorize a transaction manually:
-```sql
--- In any SQLite client:
-UPDATE transactions SET category = 'Healthcare' WHERE description LIKE '%Shoppers%';
-```
 
 ---
 
@@ -147,35 +113,36 @@ UPDATE transactions SET category = 'Healthcare' WHERE description LIKE '%Shopper
 
 ```bash
 pytest tests/ -v
-# 9 passed in 0.55s
 ```
 
-Tests cover: CSV parsing, date formats, amount parsing, categorization, spending analytics, anomaly detection, and budget checking — all against an in-memory test database.
+---
+
+## Skills & Technologies
+
+- **Python** — CSV parsing, Flask web framework, argparse CLI
+- **SQL / SQLite** — Aggregate queries, window functions, upserts
+- **Data Analysis** — Rolling averages, anomaly detection, spending trends
+- **Frontend** — HTML, CSS, JavaScript, Chart.js
+- **Software Engineering** — Separation of concerns, testing, CI/CD with GitHub Actions
 
 ---
 
-## Skills You'll Build
+## Roadmap
 
-Working through this project teaches:
-
-- **Python**: CSV parsing, date handling, dataclasses, argparse CLI design
-- **SQL / SQLite**: Aggregate queries (`SUM`, `GROUP BY`, `CASE WHEN`), window functions, upserts
-- **Data Analysis**: Rolling averages, percentage change, anomaly thresholds
-- **HTML Report Generation**: Templating, Chart.js integration, responsive design
-- **Software Engineering**: Separation of concerns, test fixtures, CI/CD with GitHub Actions
-
----
-
-## Roadmap Ideas
-
-- [ ] Web dashboard (Flask/FastAPI) instead of CLI-only
-- [ ] PDF export using `weasyprint`
-- [ ] Plaid API integration for automatic bank sync
-- [ ] Email delivery of monthly reports
+- [ ] AI-powered auto-categorization using Claude API
+- [ ] PDF export of monthly reports
 - [ ] Multi-currency support
+- [ ] Deploy to web so anyone can use it online
 
 ---
 
 ## License
 
 MIT — use freely, no warranties.
+
+
+---
+
+## Author
+
+Madina Alizada
