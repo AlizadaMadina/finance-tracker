@@ -46,8 +46,8 @@ pipeline = Pipeline([
 
 pipeline.fit(X_train, y_train)
 
-# ── Evaluate on Kaggle Test Set ───────────────────────────────────────────
-print("\n📊 Results on Kaggle test set:")
+# ── Evaluate on synthetic Test Set ───────────────────────────────────────────
+print("\n📊 Results on synthetic test set:")
 y_pred = pipeline.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f"  Accuracy: {accuracy * 100:.2f}%")
