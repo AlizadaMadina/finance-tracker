@@ -4,7 +4,7 @@ flask
 gunicorn
 # CSV parsing, data analysis
 pandas>=2.0.0
-
+scikit-learn
 # Visualization (optional - for future chart extensions)
 matplotlib>=3.7.0
 
