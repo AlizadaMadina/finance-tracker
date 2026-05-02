@@ -133,6 +133,7 @@ finance-tracker/
 - PDF export of monthly reports
 - Support for multi-currency transactions
 - Better handling of chequing account data where banks use vague descriptions
+- Support uploading multiple months at once for better anomaly detection
 
 ---
 
