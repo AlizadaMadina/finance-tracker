@@ -87,6 +87,7 @@ python cli.py report                       # generate HTML report
 
 ## Project structure
 
+```
 finance-tracker/
 ├── app.py               # Flask web server
 ├── cli.py               # command line interface
@@ -104,6 +105,7 @@ finance-tracker/
 ├── tests/
 │   └── test_core.py     # test suite
 └── data/                # database and CSV files
+```
 
 ---
 ## Tech stack
