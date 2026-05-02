@@ -97,13 +97,15 @@ finance-tracker/
 ├── generate_data.py     # generates synthetic Canadian training data
 ├── train_model.py       # trains and saves the ML model
 ├── model.pkl            # saved trained model
+├── Procfile             # tells Render how to run the app
+├── requirements.txt     # Python dependencies
 ├── templates/
 │   └── index.html       # web app frontend
 ├── tests/
 │   └── test_core.py     # test suite
 └── data/                # database and CSV files
----
 
+---
 ## Tech stack
 
 - Python, Flask, SQLite
