@@ -72,23 +72,21 @@ with open("model.pkl", "wb") as f:
     pickle.dump(pipeline, f)
 print("  Saved to model.pkl ✅")
 
-# ── Test on YOUR Scotiabank data ──────────────────────────────────────────
-print("\n🏦 Testing on your real Scotiabank transactions...")
-your_transactions = [
-    "uber canada/ubereats",
-    "shipyards coffee",
-    "nesters market 4548",
-    "netflix subscription",
-    "shoppers drug mart",
-    "sfu bookstore",
-    "caconnect ryanv vnlc2",
-    "aritzia pacific ctr",
-    "london drugs",
-    "mcdonald's #12135",
-]
+# ── Test on YOUR real labeled Scotiabank data ─────────────────────────────
+print("\n🏦 Testing on YOUR real Scotiabank transactions...")
+real = pd.read_csv("data/my_real_transactions.csv")
+X_real = real["transaction_text"]
+y_real = real["category"]
 
-predictions = pipeline.predict(your_transactions)
-print(f"\n  {'Transaction':<35} {'Predicted Category'}")
-print(f"  {'─'*55}")
-for tx, pred in zip(your_transactions, predictions):
-    print(f"  {tx:<35} {pred}")
+y_real_pred = pipeline.predict(X_real)
+real_accuracy = accuracy_score(y_real, y_real_pred)
+print(f"\n  Real-world accuracy: {real_accuracy * 100:.2f}%")
+print("\n  Detailed results:")
+print(classification_report(y_real, y_real_pred, zero_division=0))
+
+print("\n  Transaction by transaction:")
+print(f"  {'Transaction':<35} {'Actual':<20} {'Predicted':<20} {'✓/✗'}")
+print(f"  {'─'*80}")
+for tx, actual, pred in zip(X_real, y_real, y_real_pred):
+    correct = "✅" if actual == pred else "❌"
+    print(f"  {tx:<35} {actual:<20} {pred:<20} {correct}")
