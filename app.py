@@ -1,12 +1,24 @@
 from flask import Flask, request, jsonify, send_from_directory
-import tempfile, os
+import tempfile, os, pickle
 from pathlib import Path
 
 app = Flask(__name__, template_folder='templates')
 
+# Load ML model once when app starts
+ML_MODEL = None
+model_path = Path("model.pkl")
+if model_path.exists():
+    with open(model_path, "rb") as f:
+        ML_MODEL = pickle.load(f)
+    print("✅ ML model loaded!")
+else:
+    print("⚠️  No ML model found, using keyword rules only")
+
+
 @app.route("/")
 def index():
     return send_from_directory('templates', 'index.html')
+
 
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -15,11 +27,14 @@ def upload():
     file = request.files["file"]
     if not file.filename.endswith(".csv"):
         return jsonify({"error": "Please upload a CSV file"}), 400
+
     account = request.form.get("account", "Uploaded Account")
     flip_amounts = request.form.get("flip_amounts", "false") == "true"
+
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="wb") as tmp:
         file.save(tmp)
         tmp_path = tmp.name
+
     try:
         import database, analytics, importer
         tmp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -31,25 +46,48 @@ def upload():
         database.init_db()
         importer.seed_rules()
         count = importer.import_csv(tmp_path, account=account)
+
         if count == 0:
             return jsonify({"error": "No transactions could be read from this CSV."}), 400
+
+        # Flip amounts for credit cards
         if flip_amounts:
             conn = database.get_connection()
             conn.execute("UPDATE transactions SET amount = -amount WHERE amount > 0")
             conn.commit()
             conn.close()
-        conn = database.get_connection()
-        conn.execute("UPDATE transactions SET category='Transfers' WHERE description LIKE '%payment from%'")
-        conn.commit()
-        conn.close()
+
+        # Use ML model to categorize if available
+        if ML_MODEL:
+            conn = database.get_connection()
+            txs = conn.execute("SELECT id, description FROM transactions").fetchall()
+            for tx in txs:
+                try:
+                    predicted = ML_MODEL.predict([tx["description"]])[0]
+                    conn.execute("UPDATE transactions SET category=? WHERE id=?",
+                                (predicted, tx["id"]))
+                except:
+                    pass
+            conn.commit()
+            conn.close()
+            print(f"✅ ML model categorized {count} transactions")
+        else:
+            # Fallback: fix transfers manually
+            conn = database.get_connection()
+            conn.execute("UPDATE transactions SET category='transfers' WHERE description LIKE '%payment from%'")
+            conn.commit()
+            conn.close()
+
         monthly = analytics.monthly_summary()
         if not monthly:
             return jsonify({"error": "Could not parse dates in this CSV"}), 400
+
         latest_month = monthly[-1]["month"]
         result = {
             "success": True,
             "month": latest_month,
             "transaction_count": count,
+            "ml_categorized": ML_MODEL is not None,
             "stats": next((m for m in monthly if m["month"] == latest_month), {}),
             "categories": analytics.spending_by_category(latest_month),
             "monthly": monthly,
@@ -58,13 +96,16 @@ def upload():
             "daily": analytics.daily_spending(latest_month),
         }
         return jsonify(result)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     finally:
         os.unlink(tmp_path)
         database.DB_PATH = original_db
         try: os.unlink(tmp_db.name)
         except: pass
+
 
 if __name__ == "__main__":
     print("\n🚀 Finance Tracker — open http://localhost:8000\n")
