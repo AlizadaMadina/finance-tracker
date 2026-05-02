@@ -1,6 +1,8 @@
-# 💰 FinanceIQ — Personal Finance Tracker & Spending Analyzer
+# FinanceIQ - Personal Finance Tracker and Spending Analyzer
 
-> Upload your bank transactions, detect spending anomalies, and get a beautiful dashboard — all in your browser or from the command line.
+A web app that takes your bank CSV file and gives you a visual breakdown of your spending, detects unusual expenses, and uses a machine learning model to automatically label your transactions.
+
+Built this as a personal project to actually understand where my money goes every month.
 
 [![CI](https://github.com/AlizadaMadina/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/AlizadaMadina/finance-tracker/actions)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://python.org)
@@ -8,138 +10,131 @@
 
 ---
 
-## What It Does
+## Live Demo
 
-This is not just another expense logger. The core value is the **insights engine**:
+Try it here: [https://finance-tracker-w5zt.onrender.com](https://finance-tracker-w5zt.onrender.com)
 
-- 📥 **Smart CSV Import** — Auto-detects column names from any major bank export format
-- 🗂 **Auto-Categorization** — 15+ keyword rules (Groceries, Transport, Subscriptions, etc.)
-- 🚨 **Anomaly Detection** — Flags categories where you spent significantly more than your rolling average
-- 🎯 **Budget Tracking** — Set monthly limits per category, track progress
-- 📊 **Beautiful Web Dashboard** — Upload your CSV and see interactive charts instantly
-- 📈 **HTML Reports** — Auto-generated monthly reports with charts
-- 🔍 **SQL-Powered Analytics** — All data lives in a local SQLite file you fully own
+Just upload your bank CSV and it will analyze your spending instantly. No account needed, no data stored.
+
+Note: The free server sleeps after inactivity so the first load might take 30 seconds.
 
 ---
 
-## Running the Web App
+## What it does
+
+- Upload any bank CSV file (Scotiabank, TD, RBC, etc.) and get a spending dashboard instantly
+- Automatically categorizes transactions using a ML model trained on 8,000 Canadian transactions
+- Detects spending anomalies, for example if you spent 40% more on food this month vs your average
+- Shows spending by category, daily spending, monthly income vs expenses trend
+- Works from the browser, no code needed
+
+---
+
+## How the ML model works
+
+Instead of manually writing rules like "if description contains uber then category is transport", I trained a real classification model.
+
+The model uses TF-IDF to convert transaction descriptions into numbers, then Logistic Regression to predict the category. It was trained on 8,000 synthetic Canadian transactions I generated with real merchant names (Tim Hortons, Safeway, Aritzia, Translink, etc.) and tested on my real Scotiabank data.
+
+Results on real bank data:
+- Overall accuracy: 85%
+- Transport: 100%
+- Groceries: 100%
+- Healthcare: 100%
+- Food: 88% F1-score
+- Shopping: 55% F1-score (hardest category)
+
+The model is saved as model.pkl and loaded when the web app starts. Every uploaded CSV gets categorized automatically.
+
+---
+
+## Running locally
 
 ```bash
+git clone https://github.com/AlizadaMadina/finance-tracker.git
+cd finance-tracker
+pip install -r requirements.txt
 python app.py
 ```
 
-Then open your browser and go to:
-http://localhost:8000
+Then go to http://localhost:8000 in your browser.
 
-Upload your bank CSV file, click **Analyze my spending** and see your full dashboard instantly — no code needed!
-
----
-
-## Quick Start (CLI)
+To retrain the ML model from scratch:
 
 ```bash
-# 1. Clone and install
-git clone https://github.com/YOUR_USERNAME/finance-tracker.git
-cd finance-tracker
-pip install -r requirements.txt
-
-# 2. Load demo data to explore
-python cli.py demo
-
-# 3. See your overview
-python cli.py summary
-
-# 4. Generate a report
-python cli.py report
+python generate_data.py
+python train_model.py
 ```
 
 ---
 
-## Importing Your Own Data
+## CLI commands
 
-Most banks let you export transactions as CSV (look for "Download" or "Export" in your banking portal).
+If you prefer the terminal over the web app:
 
 ```bash
-# Auto-detect columns (works with most bank exports)
-python cli.py import ~/Downloads/transactions.csv --account "TD Chequing"
-
-# If auto-detect fails, specify column indices manually (0-indexed)
-python cli.py import ~/Downloads/export.csv --date-col 0 --desc-col 2 --amount-col 4
+python cli.py demo                          # load sample data
+python cli.py import transactions.csv       # import your CSV
+python cli.py summary                       # monthly overview
+python cli.py categories --month 2026-04   # spending by category
+python cli.py anomalies                     # detect unusual spending
+python cli.py budget set Food 400          # set a budget
+python cli.py budget check                 # check budget status
+python cli.py report                       # generate HTML report
 ```
 
-**Supported banks:**
-- Scotiabank, TD, RBC, BMO, CIBC, Tangerine
-- Chase, Bank of America, Wells Fargo
-- Any CSV with date / description / amount columns
-
 ---
 
-## CLI Commands
-
-| Command | Description |
-|---|---|
-| `python cli.py demo` | Load sample transactions |
-| `python cli.py import <file.csv>` | Import transactions from CSV |
-| `python cli.py summary` | Month-by-month income/expense table |
-| `python cli.py categories --month 2024-03` | Spending breakdown by category |
-| `python cli.py anomalies --month 2024-03` | Detect unusual spending vs prior months |
-| `python cli.py budget set Groceries 400` | Set a monthly budget |
-| `python cli.py budget check` | Check all budget statuses |
-| `python cli.py report --month 2024-03` | Generate HTML report |
-| `python cli.py recent --limit 30` | Show recent transactions |
-
----
-
-## Project Structure
+## Project structure
 
 finance-tracker/
-├── app.py            # Flask web server
-├── cli.py            # CLI entry point
-├── database.py       # SQLite schema and connection
-├── importer.py       # CSV parser and auto-categorizer
-├── analytics.py      # SQL queries, anomaly detection, budgets
-├── report.py         # HTML report generator
+├── app.py               # Flask web server
+├── cli.py               # command line interface
+├── database.py          # SQLite schema and connection
+├── importer.py          # CSV parser and categorizer
+├── analytics.py         # SQL queries and anomaly detection
+├── report.py            # HTML report generator
+├── generate_data.py     # generates synthetic Canadian training data
+├── train_model.py       # trains and saves the ML model
+├── model.pkl            # saved trained model
 ├── templates/
-│   └── index.html    # Web app frontend
-├── requirements.txt
+│   └── index.html       # web app frontend
 ├── tests/
-│   └── test_core.py  # Pytest test suite
-├── data/             # SQLite DB lives here (gitignored)
-└── reports/          # Generated HTML reports (gitignored)
+│   └── test_core.py     # test suite
+└── data/                # database and CSV files
+---
+
+## Tech stack
+
+- Python, Flask, SQLite
+- scikit-learn (TF-IDF + Logistic Regression)
+- pandas for data processing
+- Chart.js for the dashboard charts
+- GitHub Actions for CI
+- Render for deployment
 
 ---
 
-## Running Tests
+## What I learned
 
-```bash
-pytest tests/ -v
-```
-
----
-
-## Skills & Technologies
-
-- **Python** — CSV parsing, Flask web framework, argparse CLI
-- **SQL / SQLite** — Aggregate queries, window functions, upserts
-- **Data Analysis** — Rolling averages, anomaly detection, spending trends
-- **Frontend** — HTML, CSS, JavaScript, Chart.js
-- **Software Engineering** — Separation of concerns, testing, CI/CD with GitHub Actions
+- How to design a SQL database and write aggregate queries
+- How to build and train a text classification model
+- The difference between in-distribution and out-of-distribution accuracy (my model got 99% on the synthetic test set but 85% on real data, which taught me a lot about overfitting)
+- How to build a full stack web app and deploy it
 
 ---
 
 ## Roadmap
 
-- [ ] AI-powered auto-categorization using Claude API
-- [ ] PDF export of monthly reports
-- [ ] Multi-currency support
-- [ ] Deploy to web so anyone can use it online
+- PDF export of monthly reports
+- Support for multi-currency transactions
+- Better handling of chequing account data where banks use vague descriptions
 
 ---
 
 ## License
 
-MIT — use freely, no warranties.
-
+MIT
 
 ---
 
