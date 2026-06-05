@@ -24,17 +24,19 @@ def index():
 def upload():
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
-    file = request.files["file"]
-    if not file.filename.endswith(".csv"):
-        return jsonify({"error": "Please upload a CSV file"}), 400
+    
+    files = request.files.getlist("file")
+    if not files or files[0].filename == "":
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    for file in files:
+        if not file.filename.endswith(".csv"):
+            return jsonify({"error": f"{file.filename} is not a CSV file"}), 400
 
     account = request.form.get("account", "Uploaded Account")
     flip_amounts = request.form.get("flip_amounts", "false") == "true"
 
-    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="wb") as tmp:
-        file.save(tmp)
-        tmp_path = tmp.name
-
+    tmp_paths = []
     try:
         import database, analytics, importer
         tmp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
@@ -45,19 +47,24 @@ def upload():
         importer.get_connection = database.get_connection
         database.init_db()
         importer.seed_rules()
-        count = importer.import_csv(tmp_path, account=account)
 
-        if count == 0:
-            return jsonify({"error": "No transactions could be read from this CSV."}), 400
+        total_count = 0
+        for file in files:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="wb") as tmp:
+                file.save(tmp)
+                tmp_paths.append(tmp.name)
+            count = importer.import_csv(tmp_paths[-1], account=account)
+            total_count += count
 
-        # Flip amounts for credit cards
+        if total_count == 0:
+            return jsonify({"error": "No transactions could be read from these files."}), 400
+
         if flip_amounts:
             conn = database.get_connection()
             conn.execute("UPDATE transactions SET amount = -amount WHERE amount > 0")
             conn.commit()
             conn.close()
 
-        # Use ML model to categorize if available
         if ML_MODEL:
             conn = database.get_connection()
             txs = conn.execute("SELECT id, description FROM transactions").fetchall()
@@ -70,9 +77,7 @@ def upload():
                     pass
             conn.commit()
             conn.close()
-            print(f"✅ ML model categorized {count} transactions")
         else:
-            # Fallback: fix transfers manually
             conn = database.get_connection()
             conn.execute("UPDATE transactions SET category='transfers' WHERE description LIKE '%payment from%'")
             conn.commit()
@@ -86,7 +91,8 @@ def upload():
         result = {
             "success": True,
             "month": latest_month,
-            "transaction_count": count,
+            "transaction_count": total_count,
+            "files_uploaded": len(files),
             "ml_categorized": ML_MODEL is not None,
             "stats": next((m for m in monthly if m["month"] == latest_month), {}),
             "categories": analytics.spending_by_category(latest_month),
@@ -101,7 +107,9 @@ def upload():
         return jsonify({"error": str(e)}), 500
 
     finally:
-        os.unlink(tmp_path)
+        for tmp_path in tmp_paths:
+            try: os.unlink(tmp_path)
+            except: pass
         database.DB_PATH = original_db
         try: os.unlink(tmp_db.name)
         except: pass

@@ -1,5 +1,5 @@
 """
-analytics.py — Spending insights, trends, and anomaly detection engine
+analytics.py - Spending insights, trends, and anomaly detection engine
 """
 
 from database import get_connection
@@ -7,7 +7,7 @@ from collections import defaultdict
 import json
 
 
-# ─── Core Query Helpers ───────────────────────────────────────────────────────
+# Core Query Helpers
 
 def spending_by_category(month: str = None) -> list[dict]:
     """
@@ -106,7 +106,7 @@ def daily_spending(month: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-# ─── Anomaly Detection ────────────────────────────────────────────────────────
+# Anomaly Detection
 
 def detect_anomalies(current_month: str, lookback_months: int = 3) -> list[dict]:
     """
@@ -178,7 +178,7 @@ def detect_anomalies(current_month: str, lookback_months: int = 3) -> list[dict]
     return anomalies
 
 
-# ─── Budget Checking ──────────────────────────────────────────────────────────
+#  Budget Checking
 
 def check_budgets(month: str) -> list[dict]:
     """Compare actual spending vs budgets for a given month."""
@@ -224,7 +224,7 @@ def set_budget(category: str, monthly_limit: float):
     print(f"✅ Budget set: {category} → ${monthly_limit:.2f}/month")
 
 
-# ─── Stats ────────────────────────────────────────────────────────────────────
+# Stats
 
 def overall_stats() -> dict:
     conn = get_connection()

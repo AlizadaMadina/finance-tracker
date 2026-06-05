@@ -282,12 +282,12 @@ def generate_dataset(n_samples: int, output_path: str):
         writer = csv.DictWriter(f, fieldnames=["transaction_text", "category"])
         writer.writeheader()
         writer.writerows(rows)
-    print(f"✅ Generated {len(rows)} transactions → {output_path}")
+    print(f" Generated {len(rows)} transactions → {output_path}")
     return len(rows)
 
 
 if __name__ == "__main__":
-    print("🇨🇦 Generating Canadian/North American transaction dataset...\n")
+    print(" Generating Canadian/North American transaction dataset...\n")
     generate_dataset(8000, "data/ca_train_transactions.csv")
     generate_dataset(1500, "data/ca_test_transactions.csv")
-    print("\n✅ Done! Now run: python train_model.py")
+    print("\n Done! Now run: python train_model.py")

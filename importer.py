@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from database import get_connection, init_db
 
-# Default keyword → category rules
+# Default keyword -> category rules
 DEFAULT_RULES = [
     ("uber|lyft|taxi|transit|bus|skytrain|translink", "Transport"),
     ("netflix|spotify|disney|hulu|youtube premium|apple tv", "Subscriptions"),
@@ -144,7 +144,7 @@ def import_csv(
             desc_col = cols["desc"]
             amount_col = cols["amount"]
 
-        print(f"  Columns → date[{date_col}] desc[{desc_col}] amount[{amount_col}]")
+        print(f"  Columns -> date[{date_col}] desc[{desc_col}] amount[{amount_col}]")
 
         for row_num, row in enumerate(reader, start=2):
             if len(row) <= max(date_col, desc_col, amount_col):
@@ -163,12 +163,12 @@ def import_csv(
                 )
                 inserted += 1
             except Exception as e:
-                print(f"  ⚠️  Row {row_num} skipped: {e}")
+                print(f"    Row {row_num} skipped: {e}")
                 skipped += 1
 
     conn.commit()
     conn.close()
-    print(f"✅ Imported {inserted} transactions ({skipped} skipped) from '{path.name}'")
+    print(f" Imported {inserted} transactions ({skipped} skipped) from '{path.name}'")
     return inserted
 
 

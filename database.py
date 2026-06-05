@@ -48,7 +48,7 @@ def init_db():
     """)
     conn.commit()
     conn.close()
-    print("✅ Database initialized at", DB_PATH)
+    print(" Database initialized at", DB_PATH)
 
 
 if __name__ == "__main__":
