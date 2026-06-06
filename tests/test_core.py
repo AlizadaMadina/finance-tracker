@@ -25,7 +25,7 @@ def temp_db(tmp_path, monkeypatch):
     yield
 
 
-# ─── Importer Tests ────────────────────────────────────────────────────────
+# Importer Tests
 
 class TestImporter:
     def test_parse_amount_standard(self):
@@ -82,7 +82,7 @@ class TestImporter:
         assert "Groceries" in cats
 
 
-# ─── Analytics Tests ───────────────────────────────────────────────────────
+# Analytics Tests
 
 class TestAnalytics:
     def _seed(self, rows):

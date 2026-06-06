@@ -10,9 +10,9 @@ model_path = Path("model.pkl")
 if model_path.exists():
     with open(model_path, "rb") as f:
         ML_MODEL = pickle.load(f)
-    print("✅ ML model loaded!")
+    print(" ML model loaded!")
 else:
-    print("⚠️  No ML model found, using keyword rules only")
+    print("  No ML model found, using keyword rules only")
 
 
 @app.route("/")

@@ -1,5 +1,5 @@
 """
-train_model.py — Train ML model to classify bank transactions
+train_model.py - Train ML model to classify bank transactions
 Run with: python train_model.py
 """
 
