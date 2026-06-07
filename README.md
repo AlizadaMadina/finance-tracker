@@ -123,7 +123,7 @@ finance-tracker/
 
 - How to design a SQL database and write aggregate queries
 - How to build and train a text classification model
-- The difference between in-distribution and out-of-distribution accuracy (my model got 99% on the synthetic test set but 85% on real data, which taught me a lot about overfitting)
+- How to evaluate real-world model performance: my model achieved 99% on synthetic test data but 85% on real Scotiabank data, revealing that data representativeness and distribution shift matter as much as model choice.
 - How to build a full stack web app and deploy it
 
 ---
