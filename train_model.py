@@ -26,7 +26,6 @@ y_test = test["category"]
 
 # Build Pipeline
 # Pipeline = TF-IDF + Logistic Regression in one step
-# Think of it like an assembly line:
 # Raw text -> TF-IDF converts to numbers -> Model predicts category
 
 print("\n Training model...")
